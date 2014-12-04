@@ -10,6 +10,16 @@ var Validator = function(form_name, inputs){
     this.validators = [];
     this.messages = [];
     this.invalid = [];
+    this.location = null;
+    this.debug = false;
+
+    this.setDebug = function(debug){
+        this.debug = debug;
+    };
+
+    this.setErrorMessageLocation = function(location){
+        this.location = location;
+    };
 
     this.addMessage = function(name, message){
         this.messages[name] = message;
@@ -56,48 +66,67 @@ var Validator = function(form_name, inputs){
     };
 
     this.validateInput = function(input, show){
-        $validators = input.data("validators").split("|");
-        $result = [];
-        jQuery.each($validators, function(key, value){
-            if (value.indexOf(":") > -1) {
-                $options = value.split(":");
-                $result[value] = $this.getValidator($options[0], input.val(), $options[1]);
-            }
-            else {
-                $result[value] = $this.getValidator(value, input.val(), null);
-            }
-        });
-        $this.addValidInput($input[0].name);
-        $errors = [];
-        for(key in $result){
-            $value = $result[key];
-            if($value === false) {
-                if(key.indexOf(":") > -1){
-                    $options = key.split(":");
-                    $errors[key] = $this.getMessage($options[0]).replace("{compare}", $input[0].name).replace("{object}", $options[1]).replace("{field}", $options[0]);
+        if(input !== undefined && input !== null) {
+            $validators = input.data("validators").split("|");
+            $result = [];
+            jQuery.each($validators, function (key, value) {
+                if (value.indexOf(":") > -1) {
+                    $options = value.split(":");
+                    $result[value] = $this.getValidator($options[0], input.val(), $options[1]);
                 }
                 else {
-                    $errors[key] = $this.getMessage(key).replace("{field}", input[0].name);
+                    $result[value] = $this.getValidator(value, input.val(), null);
                 }
-                $this.addInvalidInput(input[0].name);
-            }
-        }
+            });
 
-        if(show){
-            if(Object.keys($errors).length ==0){
-                input.parent(".form-group").removeClass("has-error");
-            }
-            input.parent().find(".input-error").html("");
-            for(key in $errors){
-                $value = $errors[key];
-                input.parent(".form-group").addClass("has-error");
-                input.parent().find(".input-error").append("<p>" + $value + "</p>");
-                if(key === "required"){
-                    break;
+            $this.addValidInput($input[0].name);
+            $errors = [];
+            for (key in $result) {
+                $value = $result[key];
+                if ($value === false) {
+                    if (key.indexOf(":") > -1) {
+                        $options = key.split(":");
+                        $errors[key] = $this.getMessage($options[0]).replace("{option}", $options[0]).replace("{value}", $options[1]).replace("{field}", input[0].name);
+                    }
+                    else {
+                        $errors[key] = $this.getMessage(key).replace("{field}", input[0].name).replace("{value}", input.val());
+                    }
+                    $this.addInvalidInput(input[0].name);
                 }
             }
+
+            if ($this.debug) {
+                console.log($errors);
+                console.log(input.parents(".form-group").find(".input-error"));
+            }
+            if (show) {
+                if (Object.keys($errors).length === 0) {
+                    input.parents(".form-group").removeClass("has-error");
+                }
+                if ($this.location === null) {
+                    input.parents(".form-group").find(".input-error").html("");
+                }
+                else {
+                    jQuery($this.location).html("");
+                }
+                for (key in $errors) {
+                    $value = $errors[key];
+                    input.parents(".form-group").addClass("has-error");
+                    if ($this.location === null) {
+                        input.parents(".form-group").find(".input-error").append("<p>" + $value + "</p>");
+                    }
+                    else {
+                        jQuery($this.location).append("<p>" + $value + "</p>");
+                    }
+
+                    if (key === "required") {
+                        break;
+                    }
+                }
+            }
+            return $errors;
         }
-        return $errors;
+        return [];
     };
 
     this.submit = function(event){
@@ -111,6 +140,10 @@ var Validator = function(form_name, inputs){
         });
         if(Object.keys($out).length > 1){
             jQuery(form_name + " input[type=\"submit\"]").blur();
+            return false;
+        }
+        if($this.debug){
+            console.log("VALID SUBMIT (DEBUG)");
             return false;
         }
         return true;
@@ -130,7 +163,7 @@ var Validator = function(form_name, inputs){
         }
         return false;
     });
-    this.addMessage("min", "Je moet minimaal {object} tekens hebben.");
+    this.addMessage("min", "Je moet minimaal {value} tekens hebben.");
 
     this.addValidator("max", function(value, options){
         if(options === null) return false;
@@ -139,7 +172,28 @@ var Validator = function(form_name, inputs){
         }
         return false;
     });
-    this.addMessage("max", "Je mag maximaal {object} tekens hebben.");
+    this.addMessage("max", "Je mag maximaal {value} tekens hebben.");
+
+    this.addValidator("min-value", function(value, options){
+        if(options === null) return false;
+        if(!(/^\d+$/.test(value))) return null;
+        if(parseInt(value) >= parseInt(options)){
+            return true;
+        }
+        return false;
+    });
+    this.addMessage("min-value", "{field} moet meer zijn dan {value}.");
+
+    this.addValidator("max-value", function(value, options){
+        if(options === null) return false;
+        if(!(/^\d+$/.test(value))) return null;
+        console.log(value + ", " + options);
+        if(parseInt(value) <= parseInt(options)){
+            return true;
+        }
+        return false;
+    });
+    this.addMessage("max-value", "{field} mag niet meer zijn dan {value}.");
 
     this.addValidator("alpha", function(value, options){
         return /^[-_ a-zA-Z]+$/.test(value);
@@ -174,19 +228,5 @@ var Validator = function(form_name, inputs){
         }
         return false;
     });
-    this.addMessage("equals", "Het veld {compare} komt niet overeen met het veld {object}");
+    this.addMessage("equals", "Het veld {field} komt niet overeen met het veld {option}");
 };
-
-jQuery(document).ready(function() {
-
-    var v = new Validator(".register_form", {
-        naam: "required|alpha|min:4|max:30",
-        email: "required|email|min:6|max:30",
-        website: "required|url|min:5|max:64",
-        password: "required|alphanum|min:3|max:30",
-        password_confirmation: "required|alphanum|min:3|max:30|equals:password"
-    });
-
-    // options: required, min, max, email, alpha, alpha_num, url, integer
-    v.addMessage("required", "Verplicht!");
-});
