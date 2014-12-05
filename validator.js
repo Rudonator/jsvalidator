@@ -14,6 +14,11 @@ var Validator = function(form_name, inputs){
     this.locations = [];
     this.debug = false;
     this.callback = null;
+    this.wildcard = null;
+
+    this.setWildCard = function(name){
+        this.wildcard = name;
+    }
 
     this.setCallback = function(callback){
         this.callback = callback;
@@ -205,45 +210,78 @@ var Validator = function(form_name, inputs){
     };
 
     this.submit = function(event){
-        $form = jQuery(this);
-        $out = [];
-        jQuery.each($this.inputs, function(key, value){
-            $type = null;
-            if(key.indexOf(".") > -1){
-                $type = key.split(".");
+        if($this.wildcard !== null){
+            if($this.debug){
+                console.log("WILDCARD: " + $this.wildcard);
             }
 
-            $result = [];
-            if(value.indexOf("array") > -1){
-                if($type !== null){
-                    $result = $this.validateInput(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "[]\"]"), true, value, "SUBMIT");
-                }
-                else{
-                    $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "[]\"]"), true, value, "SUBMIT");
+            $type = null;
+            if($this.wildcard.indexOf(".") > -1){
+                $type = $this.wildcard.split(".");
+            }
+
+            $exists = false;
+            if($type !== null){
+                if(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "\"]").length >= 1){
+                    $exists = true;
                 }
             }
             else{
-                if($type !== null){
-                    $result = $this.validateInput(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "\"]"), true, value, "SUBMIT");
-                }
-                else{
-                    $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "\"]"), true, value, "SUBMIT");
+                if(jQuery(form_name + " input[name=\"" + $this.wildcard + "\"]").length >= 1){
+                    $exists = true;
                 }
             }
 
-            if(Object.keys($result).length > 0){
-                $out[key] = true;
+            if($exists){
+                if($this.debug){
+                    console.log("VALID SUBMIT (DEBUG)");
+                    return false;
+                }
+                return true;
             }
-        });
-        if(Object.keys($out).length >= 1){
-            jQuery(form_name + " input[type=\"submit\"]").blur();
-            return false;
+            else{
+                $form = jQuery(this);
+                $out = [];
+                jQuery.each($this.inputs, function(key, value){
+                    $type = null;
+                    if(key.indexOf(".") > -1){
+                        $type = key.split(".");
+                    }
+
+                    $result = [];
+                    if(value.indexOf("array") > -1){
+                        if($type !== null){
+                            $result = $this.validateInput(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "[]\"]"), true, value, "SUBMIT");
+                        }
+                        else{
+                            $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "[]\"]"), true, value, "SUBMIT");
+                        }
+                    }
+                    else{
+                        if($type !== null){
+                            $result = $this.validateInput(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "\"]"), true, value, "SUBMIT");
+                        }
+                        else{
+                            $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "\"]"), true, value, "SUBMIT");
+                        }
+                    }
+
+                    if(Object.keys($result).length > 0){
+                        $out[key] = true;
+                    }
+                });
+                if(Object.keys($out).length >= 1){
+                    jQuery(form_name + " input[type=\"submit\"]").blur();
+                    return false;
+                }
+                if($this.debug){
+                    console.log("VALID SUBMIT (DEBUG)");
+                    return false;
+                }
+                return true;
+            }
         }
-        if($this.debug){
-            console.log("VALID SUBMIT (DEBUG)");
-            return false;
-        }
-        return true;
+        return false;
     };
 
     this.init();
