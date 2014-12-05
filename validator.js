@@ -266,7 +266,7 @@ var Validator = function (form_name, inputs) {
     this.addMessage("email", "Dit moet een email zijn");
 
     this.addValidator("url", function (value, options, field) {
-        return /[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)/.test(value);
+        return /[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)+$/.test(value);
     });
     this.addMessage("url", "Dit moet een url zijn");
 
