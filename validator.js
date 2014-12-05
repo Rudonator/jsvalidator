@@ -71,13 +71,28 @@ var Validator = function(form_name, inputs){
         jQuery.each(this.inputs, function(key, value){
             $para = "";
             $input = null;
+            $type = null;
+            if(key.indexOf(".") > -1){
+                $type = key.split(".");
+            }
+
             if(value.indexOf("array") > -1){
                 $para = "[]";
                 value.replace("array", "");
-                $input = jQuery(form_name + " input[name=\"" + key + "[]\"]");
+                if($type !== null){
+                    $input = jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "[]\"]");
+                }
+                else{
+                    $input = jQuery(form_name + " input[name=\"" + key + "[]\"]");
+                }
             }
             else{
-                $input = jQuery(form_name + " input[name=\"" + key + "\"]");
+                if($type !== null){
+                    $input = jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "\"]");
+                }
+                else{
+                    $input = jQuery(form_name + " input[name=\"" + key + "\"]");
+                }
                 $input.data("validators", value);
             }
 
@@ -193,12 +208,27 @@ var Validator = function(form_name, inputs){
         $form = jQuery(this);
         $out = [];
         jQuery.each($this.inputs, function(key, value){
+            $type = null;
+            if(key.indexOf(".") > -1){
+                $type = key.split(".");
+            }
+
             $result = [];
             if(value.indexOf("array") > -1){
-                $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "[]\"]"), true, value, "SUBMIT");
+                if($type !== null){
+                    $result = $this.validateInput(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "[]\"]"), true, value, "SUBMIT");
+                }
+                else{
+                    $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "[]\"]"), true, value, "SUBMIT");
+                }
             }
             else{
-                $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "\"]"), true, null, "SUBMIT");
+                if($type !== null){
+                    $result = $this.validateInput(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "\"]"), true, value, "SUBMIT");
+                }
+                else{
+                    $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "\"]"), true, value, "SUBMIT");
+                }
             }
 
             if(Object.keys($result).length > 0){
@@ -232,7 +262,7 @@ var Validator = function(form_name, inputs){
         }
         return false;
     });
-    this.addMessage("min", "Je moet minimaal {value} tekens hebben.");
+    this.addMessage("min", "Je moet minimaal {option} tekens hebben.");
 
     this.addValidator("max", function(value, options, field){
         if(options === null){
@@ -243,7 +273,7 @@ var Validator = function(form_name, inputs){
         }
         return false;
     });
-    this.addMessage("max", "Je mag maximaal {value} tekens hebben.");
+    this.addMessage("max", "Je mag maximaal {option} tekens hebben.");
 
     this.addValidator("min-value", function(value, options, field){
         if(options === null){
@@ -257,7 +287,7 @@ var Validator = function(form_name, inputs){
         }
         return false;
     });
-    this.addMessage("min-value", "{field} moet meer zijn dan {value}.");
+    this.addMessage("min-value", "{field} moet meer zijn dan {option}.");
 
     this.addValidator("max-value", function(value, options, field){
         if(options === null){
@@ -271,7 +301,7 @@ var Validator = function(form_name, inputs){
         }
         return false;
     });
-    this.addMessage("max-value", "{field} mag niet meer zijn dan {value}.");
+    this.addMessage("max-value", "{field} mag niet meer zijn dan {option}.");
 
     this.addValidator("alpha", function(value, options, field){
         return /^[-_ a-zA-Z]+$/.test(value);
@@ -279,12 +309,12 @@ var Validator = function(form_name, inputs){
     this.addMessage("alpha", "Je mag alleen alfabetische letters.");
 
     this.addValidator("email", function(value, options, field){
-        return /(\b[\w\.-]+@[\w\.-]+\.\w{2,4})+$/.test(value);
+        return /^(\b[\w\.-]+@[\w\.-]+\.\w{2,4})+$/.test(value);
     });
     this.addMessage("email", "Dit moet een email zijn");
 
     this.addValidator("url", function(value, options, field){
-        return /[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)+$/.test(value);
+        return /^[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)+$/.test(value);
     });
     this.addMessage("url", "Dit moet een url zijn");
 
@@ -294,12 +324,23 @@ var Validator = function(form_name, inputs){
     this.addMessage("alphanum", "Hier mogen alleen nummers en letters in.");
 
     this.addValidator("integer", function(value, options, field){
-        return /([0-9]+)$/.test(value);
+        return /^[0-9]+$/.test(value);
     });
     this.addMessage("integer", "Hier mogen alleen nummers in.");
 
     this.addValidator("equals", function(value, options, field){
-        $field = jQuery(form_name + " input[name=\"" + options + "\"]");
+        $type = null;
+        if(options.indexOf(".") > -1){
+            $type = options.split(".");
+        }
+
+        if($type !== null){
+            $field = jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "\"]");
+        }
+        else{
+            $field = jQuery(form_name + " input[name=\"" + options + "\"]");
+        }
+
         if($field === undefined){
             return false;
         }
