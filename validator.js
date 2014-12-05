@@ -279,7 +279,7 @@ var Validator = function(form_name, inputs){
     this.addMessage("alpha", "Je mag alleen alfabetische letters.");
 
     this.addValidator("email", function(value, options, field){
-        return /\b[\w\.-]+@[\w\.-]+\.\w{2,4}\b/.test(value);
+        return /(\b[\w\.-]+@[\w\.-]+\.\w{2,4})+$/.test(value);
     });
     this.addMessage("email", "Dit moet een email zijn");
 
