@@ -199,7 +199,7 @@ var Validator = function (form_name, inputs) {
                 $out[key] = true;
             }
         });
-        if (Object.keys($out).length > 1) {
+        if (Object.keys($out).length >= 1) {
             jQuery(form_name + " input[type=\"submit\"]").blur();
             return false;
         }
