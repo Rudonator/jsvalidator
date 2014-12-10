@@ -14,11 +14,11 @@ var Validator = function(form_name, inputs){
     this.locations = [];
     this.debug = false;
     this.callback = null;
-    this.wildcard = null;
+    this.wildcards = [];
 
-    this.setWildCard = function(name){
-        this.wildcard = name;
-    }
+    this.addWildCard = function(name){
+        this.wildcards.push(name);
+    };
 
     this.setCallback = function(callback){
         this.callback = callback;
@@ -210,78 +210,89 @@ var Validator = function(form_name, inputs){
     };
 
     this.submit = function(event){
-        if($this.wildcard !== null){
+        if($this.wildcards.length >= 1){
             if($this.debug){
-                console.log("WILDCARD: " + $this.wildcard);
-            }
-
-            $type = null;
-            if($this.wildcard.indexOf(".") > -1){
-                $type = $this.wildcard.split(".");
+                for(var i = 0; i < $this.wildcards.length; i++){
+                    console.log("WILDCARD: " + $this.wildcards[i]);
+                }
             }
 
             $exists = false;
-            if($type !== null){
-                if(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "\"]").length >= 1){
-                    $exists = true;
+            for(var i = 0; i < $this.wildcards.length; i++){
+                $type = null;
+                if($this.wildcards[i].indexOf(".") > -1){
+                    $type = $this.wildcards[i].split(".");
                 }
-            }
-            else{
-                if(jQuery(form_name + " input[name=\"" + $this.wildcard + "\"]").length >= 1){
-                    $exists = true;
+
+                if($type !== null){
+                    if(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "\"]").length >= 1){
+                        $exists = true;
+                    }
+                }
+                else{
+                    if(jQuery(form_name + " input[name=\"" + $this.wildcards[i] + "\"]").length >= 1){
+                        $exists = true;
+                    }
                 }
             }
 
             if($exists){
                 if($this.debug){
-                    console.log("VALID SUBMIT (DEBUG)");
+                    console.log("VALID WILDCARD SUBMIT (DEBUG)");
                     return false;
                 }
                 return true;
             }
             else{
-                $form = jQuery(this);
-                $out = [];
-                jQuery.each($this.inputs, function(key, value){
-                    $type = null;
-                    if(key.indexOf(".") > -1){
-                        $type = key.split(".");
-                    }
-
-                    $result = [];
-                    if(value.indexOf("array") > -1){
-                        if($type !== null){
-                            $result = $this.validateInput(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "[]\"]"), true, value, "SUBMIT");
-                        }
-                        else{
-                            $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "[]\"]"), true, value, "SUBMIT");
-                        }
-                    }
-                    else{
-                        if($type !== null){
-                            $result = $this.validateInput(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "\"]"), true, value, "SUBMIT");
-                        }
-                        else{
-                            $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "\"]"), true, value, "SUBMIT");
-                        }
-                    }
-
-                    if(Object.keys($result).length > 0){
-                        $out[key] = true;
-                    }
-                });
-                if(Object.keys($out).length >= 1){
-                    jQuery(form_name + " input[type=\"submit\"]").blur();
-                    return false;
-                }
-                if($this.debug){
-                    console.log("VALID SUBMIT (DEBUG)");
-                    return false;
-                }
-                return true;
+                return $this.normal();
             }
         }
+        else{
+            return $this.normal();
+        }
         return false;
+    };
+
+    this.normal = function(){
+        $form = jQuery(this);
+        $out = [];
+        jQuery.each($this.inputs, function(key, value){
+            $type = null;
+            if(key.indexOf(".") > -1){
+                $type = key.split(".");
+            }
+
+            $result = [];
+            if(value.indexOf("array") > -1){
+                if($type !== null){
+                    $result = $this.validateInput(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "[]\"]"), true, value, "SUBMIT");
+                }
+                else{
+                    $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "[]\"]"), true, value, "SUBMIT");
+                }
+            }
+            else{
+                if($type !== null){
+                    $result = $this.validateInput(jQuery(form_name + " " + $type[0] + "[name=\"" + $type[1] + "\"]"), true, value, "SUBMIT");
+                }
+                else{
+                    $result = $this.validateInput(jQuery(form_name + " input[name=\"" + key + "\"]"), true, value, "SUBMIT");
+                }
+            }
+
+            if(Object.keys($result).length > 0){
+                $out[key] = true;
+            }
+        });
+        if(Object.keys($out).length >= 1){
+            jQuery(form_name + " input[type=\"submit\"]").blur();
+            return false;
+        }
+        if($this.debug){
+            console.log("VALID SUBMIT (DEBUG)");
+            return false;
+        }
+        return true;
     };
 
     this.init();
@@ -352,7 +363,7 @@ var Validator = function(form_name, inputs){
     this.addMessage("email", "Dit moet een email zijn");
 
     this.addValidator("url", function(value, options, field){
-        return /^[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)+$/.test(value);
+        return /^(http(s)?):\/\/[(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)+$/.test(value);
     });
     this.addMessage("url", "Dit moet een url zijn");
 
