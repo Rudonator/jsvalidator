@@ -16,6 +16,11 @@ var Validator = function(form_name, inputs) {
    this.callback = null;
    this.wildcards = [];
    this.error_tag = "p";
+   this.validcallback = null;
+
+   this.setValidCallback = function(callback){
+     this.validcallback = callback;
+   };
 
    this.setErrorTag = function(tag){
      this.error_tag = tag;
@@ -202,7 +207,7 @@ var Validator = function(form_name, inputs) {
       return [];
    };
 
-   this.submit = function(event) {console.log("PUDDING");
+   this.submit = function(event) {
       if ($this.wildcards.length >= 1) {
          if ($this.debug) {
             for (var i = 0; i < $this.wildcards.length; i++) {
@@ -233,7 +238,14 @@ var Validator = function(form_name, inputs) {
                console.log("VALID WILDCARD SUBMIT (DEBUG)");
                return false;
             }
-            return true;
+
+            if($this.validcallback !== null){
+              $this.validcallback();
+              return false;
+            }
+            else{
+              return true;
+            }
          } else {
             return $this.normal();
          }
@@ -279,7 +291,14 @@ var Validator = function(form_name, inputs) {
          console.log("VALID SUBMIT (DEBUG)");
          return false;
       }
-      return true;
+
+      if($this.validcallback !== null){
+        $this.validcallback();
+        return false;
+      }
+      else{
+        return true;
+      }
    };
 
    this.init();
