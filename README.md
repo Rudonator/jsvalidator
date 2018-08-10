@@ -1,4 +1,1 @@
-jsvalidator
-===========
-
-Javascript form validator (jQuery)
+# jQuery form validation
